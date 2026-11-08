@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useParams, useSearchParams } from "react-router-dom";
-import { apiFetch } from "../services/api";
-import { getOfflinePakistaniRecipe } from "../services/offlineRecipes";
+import { getOfflineHealthRecommendation, getOfflinePakistaniRecipe } from "../services/offlineRecipes";
 import {
   AlertCircle, CheckCircle2, ChefHat, Download, FileText, HeartPulse,
   Loader2, RefreshCw, ScrollText, Soup, Users, Utensils, BarChart3, Salad,
@@ -36,7 +35,7 @@ export default function PakistaniRecipe() {
   const { food } = useParams();
   const location = useLocation();
   const [params] = useSearchParams();
-  const persons = Math.min(10, Math.max(1, Number(params.get("persons") || 2)));
+  const persons = Math.min(20, Math.max(1, Number(params.get("persons") || 2)));
 
   const [language, setLanguage] = useState("english");
   const [data, setData] = useState(null);
@@ -86,7 +85,13 @@ export default function PakistaniRecipe() {
             );
           }
 
-          const normalizedIngredients = passedRecipe.ingredients
+          const rawIngredients = language === "urdu"
+            ? (passedRecipe.ingredients_urdu || passedRecipe.ingredients)
+            : passedRecipe.ingredients;
+          const rawSteps = language === "urdu"
+            ? (passedRecipe.steps_urdu || passedRecipe.steps)
+            : passedRecipe.steps;
+          const normalizedIngredients = rawIngredients
             .map((item) => {
               if (typeof item === "string") {
                 return { ingredient_name: item.trim(), quantity: "As required" };
@@ -103,7 +108,7 @@ export default function PakistaniRecipe() {
               quantity: scaleGeminiQuantity(item.quantity, persons / 2),
             }));
 
-          const normalizedSteps = passedRecipe.steps
+          const normalizedSteps = rawSteps
             .map((item, index) => {
               if (typeof item === "string") {
                 return { step_number: index + 1, instruction: item.trim() };
@@ -125,7 +130,9 @@ export default function PakistaniRecipe() {
           result = {
             ...passedRecipe,
             recipe_id: null,
-            food_name: passedRecipe.recipe_name || passedRecipe.name || food,
+            food_name: language === "urdu"
+              ? (passedRecipe.recipe_name_urdu || passedRecipe.recipe_name || passedRecipe.name || food)
+              : (passedRecipe.recipe_name || passedRecipe.name || food),
             persons,
             ingredients: normalizedIngredients,
             steps: normalizedSteps,
@@ -159,13 +166,7 @@ export default function PakistaniRecipe() {
     try {
       setError("");
       setHealthBusy(true);
-      const payload = data.source === "gemini"
-        ? { recipe: data, persons, health, language }
-        : { recipe_id: data.recipe_id, persons, health, language };
-      const result = await apiFetch("/health_recommendation", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
+      const result = getOfflineHealthRecommendation(data, health, language);
       setUpdated(result);
     } catch (e) {
       setError(e?.message || "Unable to apply the health recommendation. Please check your internet connection.");

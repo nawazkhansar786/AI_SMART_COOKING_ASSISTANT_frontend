@@ -71,6 +71,103 @@ function scaleQuantity(quantity, factor) {
   return normalized.replace(token, String(scaled));
 }
 
+function offlineHealthMessage(health, language) {
+  const messages = {
+    english: {
+      healthy: "Original recipe is recommended.",
+      diabetes: "Recipe modified for Diabetes.",
+      blood_pressure: "Recipe modified for High Blood Pressure.",
+      weight_loss: "Recipe modified for Weight Loss.",
+      weight_gain: "Recipe modified for Weight Gain.",
+    },
+    urdu: {
+      healthy: "اصل نسخہ آپ کے لیے مناسب ہے۔",
+      diabetes: "ذیابیطس کے لیے نسخے میں تبدیلی کی گئی ہے۔",
+      blood_pressure: "بلند فشار خون کے لیے نسخے میں تبدیلی کی گئی ہے۔",
+      weight_loss: "وزن کم کرنے کے لیے نسخے میں تبدیلی کی گئی ہے۔",
+      weight_gain: "وزن بڑھانے کے لیے نسخے میں تبدیلی کی گئی ہے۔",
+    },
+  };
+  return messages[language]?.[health] || messages.english[health];
+}
+
+function cloneRecipeItems(items) {
+  return (items || []).map((item) => ({ ...item }));
+}
+
+export function getOfflineHealthRecommendation(recipe, health, language = "english") {
+  const allowed = ["healthy", "diabetes", "blood_pressure", "weight_loss", "weight_gain"];
+  if (!allowed.includes(health)) {
+    throw new Error("Unsupported health condition.");
+  }
+
+  const ingredients = cloneRecipeItems(recipe.ingredients);
+  const steps = cloneRecipeItems(recipe.steps);
+  const urdu = language === "urdu";
+  const ingredientName = (item) => String(item.ingredient_name ?? item.name ?? "").toLowerCase();
+  const setQuantity = (item, english, urduText) => {
+    item.quantity = urdu ? urduText : english;
+  };
+
+  if (health === "diabetes") {
+    ingredients.forEach((item) => {
+      if (ingredientName(item).includes("sugar") || ingredientName(item).includes("چینی")) {
+        item.ingredient_name = urdu ? "اسٹیویا" : "Stevia";
+        setQuantity(item, "As Required", "حسبِ ضرورت");
+      }
+    });
+    steps.forEach((item) => {
+      item.instruction = String(item.instruction ?? item.step ?? "")
+        .replace(/sugar/gi, urdu ? "اسٹیویا" : "Stevia");
+    });
+  } else if (health === "blood_pressure") {
+    ingredients.forEach((item) => {
+      const name = ingredientName(item);
+      if (name.includes("salt") || name.includes("نمک")) {
+        setQuantity(item, "1/2 tsp", "آدھا چائے کا چمچ");
+      } else if (name.includes("oil") || name.includes("تیل")) {
+        setQuantity(item, "2 tbsp", "2 کھانے کے چمچ");
+      } else if (name.includes("ghee") || name.includes("گھی")) {
+        setQuantity(item, "1 tbsp", "1 کھانے کا چمچ");
+      }
+    });
+    steps.forEach((item) => {
+      item.instruction = String(item.instruction ?? item.step ?? "")
+        .replace(/1 tsp salt/gi, "1/2 tsp salt")
+        .replace(/5 tbsp oil/gi, "2 tbsp oil");
+    });
+  } else if (health === "weight_loss") {
+    ingredients.forEach((item) => {
+      if (ingredientName(item).includes("oil") || ingredientName(item).includes("تیل")) {
+        setQuantity(item, "2 tbsp", "2 کھانے کے چمچ");
+      }
+    });
+    steps.forEach((item) => {
+      item.instruction = String(item.instruction ?? item.step ?? "")
+        .replace(/cream/gi, "Low Fat Yogurt");
+    });
+  } else if (health === "weight_gain") {
+    ingredients.push({
+      ingredient_name: urdu ? "ابلا ہوا انڈا" : "Boiled Egg",
+      quantity: urdu ? "2 عدد" : "2 piece",
+    });
+    steps.push({
+      step_number: steps.length + 1,
+      instruction: urdu
+        ? "اضافی پروٹین کے لیے 2 ابلے ہوئے انڈوں کے ساتھ پیش کریں۔"
+        : "Serve with 2 boiled eggs for extra protein.",
+    });
+  }
+
+  return {
+    ...recipe,
+    ingredients,
+    steps,
+    message: offlineHealthMessage(health, language),
+    source: "csv",
+  };
+}
+
 export async function getOfflinePakistaniRecipe(food, language = "english", persons = 2) {
   const urdu = language === "urdu";
   const folder = urdu ? "Pakistani_Food_urdu" : "Pakistani_Food";
@@ -96,7 +193,7 @@ export async function getOfflinePakistaniRecipe(food, language = "english", pers
     ? urduRecipes.find((item) => item["رسیپی_آئی_ڈی"] === recipeId)
     : englishRecipes.find((item) => item.recipe_id === recipeId);
   const idKey = urdu ? "رسیپی_آئی_ڈی" : "recipe_id";
-  const safePersons = Math.min(10, Math.max(1, Number(persons) || 2));
+  const safePersons = Math.min(20, Math.max(1, Number(persons) || 2));
   const factor = safePersons / 2;
 
   const recipeIngredients = ingredients.filter((item) => item[idKey] === recipeId).map((item) => ({
@@ -116,5 +213,60 @@ export async function getOfflinePakistaniRecipe(food, language = "english", pers
     steps: recipeSteps,
     nutrition: nutritionRow ?? null,
     source: "csv",
+  };
+}
+
+const baltiCache = new Map();
+
+async function loadBaltiRecipes(language) {
+  const file = language === "urdu"
+    ? "Balti_Food/recipes_urdu.csv"
+    : "Balti_Food/recipes.csv";
+  if (!baltiCache.has(file)) {
+    baltiCache.set(file, loadCSV(file));
+  }
+  return baltiCache.get(file);
+}
+
+function normalizeBaltiName(value) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "");
+}
+
+export async function getOfflineBaltiRecipes() {
+  return loadBaltiRecipes("english");
+}
+
+export async function getOfflineBaltiRecipe(recipeNo, language = "english") {
+  const recipes = await loadBaltiRecipes(language);
+  const id = String(recipeNo ?? "").trim();
+  const recipe = recipes.find((item) => String(item["S.No"] ?? "").trim() === id);
+  if (!recipe) {
+    throw new Error(`Balti recipe "${recipeNo}" was not found in the local dataset.`);
+  }
+
+  return {
+    "S.No": String(recipe["S.No"] ?? "").trim(),
+    "Food Name": recipe["Food Name"] ?? "",
+    ingredients: recipe.Ingredients ?? "",
+    instruction: recipe.Instruction ?? "",
+  };
+}
+
+export async function findOfflineBaltiRecipe(food) {
+  const recipes = await loadBaltiRecipes("english");
+  const searchName = normalizeBaltiName(food);
+  const recipe = recipes.find(
+    (item) => normalizeBaltiName(item["Food Name"]) === searchName
+  );
+  if (!recipe) {
+    throw new Error(`Balti recipe "${food}" was not found in the local dataset.`);
+  }
+
+  return {
+    recipe_no: String(recipe["S.No"] ?? "").trim(),
+    food: recipe["Food Name"] ?? "",
   };
 }

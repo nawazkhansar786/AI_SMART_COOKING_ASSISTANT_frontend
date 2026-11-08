@@ -248,13 +248,13 @@ export default function IngredientDetection() {
 
   // =========================================================
   // PERSONS
-  // ONLY 2 TO 10
+  // ONLY 2 TO 20
   // =========================================================
 
   const handlePersonsChange = (e) => {
     const value = Number(e.target.value);
 
-    if (value >= 2 && value <= 10) {
+    if (value >= 2 && value <= 20) {
       setPersons(value);
     }
   };
@@ -373,9 +373,9 @@ export default function IngredientDetection() {
       return;
     }
 
-    // Keep persons between 2 and 10
+    // Keep persons between 2 and 20
     const selectedPersons = Math.min(
-      10,
+      20,
       Math.max(2, Number(persons) || 2)
     );
 
@@ -1020,17 +1020,18 @@ export default function IngredientDetection() {
                     Number of Persons
                   </label>
 
-                  <input
+                  <select
                     id="detect-persons"
-                    type="number"
-                    min="2"
-                    max="10"
                     value={persons}
                     onChange={handlePersonsChange}
-                  />
+                  >
+                    {Array.from({ length: 19 }, (_, index) => index + 2).map((value) => (
+                      <option key={value} value={value}>{value} persons</option>
+                    ))}
+                  </select>
 
                   <small>
-                    Select between 2 and 10 persons.
+                    Select between 2 and 20 persons.
                   </small>
 
                 </div>

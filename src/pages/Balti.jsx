@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { apiFetch } from "../services/api";
+import { findOfflineBaltiRecipe } from "../services/offlineRecipes";
 import { ArrowRight, Mountain } from "lucide-react";
 
 const foods = [
@@ -65,9 +65,7 @@ function BaltiCard({ food }) {
   const [d, setD] = useState(null);
 
   useEffect(() => {
-    apiFetch(
-      `/api/balti-recipe/${encodeURIComponent(food.name)}`
-    )
+    findOfflineBaltiRecipe(food.name)
       .then(setD)
       .catch(() => {});
   }, [food.name]);

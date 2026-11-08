@@ -68,7 +68,7 @@ export default function Ingredients() {
       return;
     }
 
-    const selectedPersons = Math.min(10, Math.max(2, Number(persons) || 2));
+    const selectedPersons = Math.min(20, Math.max(2, Number(persons) || 2));
     const hasGeminiDetails =
       Array.isArray(selectedRecipe.ingredients) && selectedRecipe.ingredients.length > 0 &&
       Array.isArray(selectedRecipe.steps) && selectedRecipe.steps.length > 0;
@@ -158,12 +158,13 @@ export default function Ingredients() {
             <div className="selected-recipe-name"><strong>Recipe:</strong> {selectedRecipe.recipe_name || selectedRecipe.name}</div>
             <div className="person-input-group">
               <label htmlFor="persons">Number of Persons</label>
-              <input id="persons" type="number" min="2" max="10" value={persons}
-                onChange={(e) => {
-                  const value = Number(e.target.value);
-                  setPersons(Number.isFinite(value) ? Math.min(10, Math.max(2, value)) : 2);
-                }} />
-              <small>Select between 2 and 10 persons.</small>
+              <select id="persons" value={persons}
+                onChange={(e) => setPersons(Number(e.target.value))}>
+                {Array.from({ length: 19 }, (_, index) => index + 2).map((value) => (
+                  <option key={value} value={value}>{value} persons</option>
+                ))}
+              </select>
+              <small>Select between 2 and 20 persons.</small>
             </div>
             <div className="person-popup-actions">
               <button type="button" className="person-cancel-btn" onClick={() => {

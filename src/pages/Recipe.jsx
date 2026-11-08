@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { apiFetch } from "../services/api";
+import { getOfflineBaltiRecipe } from "../services/offlineRecipes";
 import { AlertCircle, CheckCircle2, ChefHat, Download, FileText, HeartPulse, Loader2, RefreshCw, ScrollText, Soup, Users, Utensils, BarChart3, Salad, Check } from "lucide-react";
 
 export default function Recipe() {
@@ -19,18 +19,8 @@ export default function Recipe() {
     setLoading(true);
     setError("");
 
-    apiFetch(
-      `/get_recipe/${encodeURIComponent(
-        recipeNo
-      )}?language=${language}`
-    )
-      .then((r) => {
-        if (r.error) {
-          throw new Error(r.error);
-        }
-
-        setData(r);
-      })
+    getOfflineBaltiRecipe(recipeNo, language)
+      .then(setData)
       .catch((e) => {
         setError(
           e?.message || "Unable to load recipe."

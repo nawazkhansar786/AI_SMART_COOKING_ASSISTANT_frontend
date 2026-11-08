@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   Camera,
@@ -35,6 +35,7 @@ export default function Navbar() {
 
   const [username, setUsername] = useState("User");
   const [timerFinished, setTimerFinished] = useState(false);
+  const audioContextRef = useRef(null);
 
   const navigate = useNavigate();
 
@@ -71,24 +72,26 @@ export default function Navbar() {
             });
           }
 
-          // Sound notification
+          // Alarm sound: reuse the context unlocked by the Start button.
           try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            oscillator.frequency.value = 880;
-            oscillator.type = "sine";
-
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            oscillator.start();
-            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1);
-            oscillator.stop(audioContext.currentTime + 1);
+            const audioContext = audioContextRef.current;
+            if (!audioContext) throw new Error("Audio context is unavailable");
+            audioContext.resume();
+            [0, 0.45, 0.9].forEach((offset) => {
+              const oscillator = audioContext.createOscillator();
+              const gainNode = audioContext.createGain();
+              const startAt = audioContext.currentTime + offset;
+              oscillator.connect(gainNode);
+              gainNode.connect(audioContext.destination);
+              oscillator.frequency.value = 880;
+              oscillator.type = "sine";
+              gainNode.gain.setValueAtTime(0.3, startAt);
+              gainNode.gain.exponentialRampToValueAtTime(0.001, startAt + 0.3);
+              oscillator.start(startAt);
+              oscillator.stop(startAt + 0.3);
+            });
           } catch (error) {
-            console.log("Timer sound could not play:", error);
+            console.warn("Timer alarm could not play:", error);
           }
 
           return 0;
@@ -103,6 +106,15 @@ export default function Navbar() {
 
   const start = () => {
     const totalMinutes = Math.max(1, Number(minutes) || 1);
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (AudioContext) {
+        audioContextRef.current = audioContextRef.current || new AudioContext();
+        audioContextRef.current.resume();
+      }
+    } catch (error) {
+      console.warn("Timer audio could not be initialized:", error);
+    }
     setSeconds(totalMinutes * 60);
     setTimerFinished(false);
   };
