@@ -25,11 +25,7 @@ Thumbs.db
 desktop.ini
 
 # Android / Gradle generated files
-android/.gradle/
-android/build/
-android/app/build/
-android/local.properties
-android/captures/
+android/
 
 # Temporary files
 *.tmp
