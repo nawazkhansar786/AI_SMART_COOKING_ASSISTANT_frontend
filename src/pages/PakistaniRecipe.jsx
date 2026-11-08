@@ -58,8 +58,10 @@ export default function PakistaniRecipe() {
             const cached = sessionStorage.getItem("selectedCookingRecipe");
             if (cached) {
               const parsed = JSON.parse(cached);
-              const cachedName = parsed.recipe_name || parsed.name;
-              if (String(cachedName || "").trim().toLowerCase() === String(food || "").trim().toLowerCase()) {
+              const cachedNames = [parsed.recipe_name, parsed.recipe_name_urdu, parsed.name]
+                .filter(Boolean)
+                .map((name) => String(name).trim().toLowerCase());
+              if (cachedNames.includes(String(food || "").trim().toLowerCase())) {
                 passedRecipe = parsed;
               }
             }
