@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Environment variables (API keys / secrets)
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# IDE and editors
+.vscode/
+.idea/
+
+# Operating system
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Android / Gradle generated files
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/captures/
+
+# Temporary files
+*.tmp
+*.log

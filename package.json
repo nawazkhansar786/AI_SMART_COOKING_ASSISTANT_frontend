@@ -1,0 +1,25 @@
+{
+  "name": "smart-cooking-assistant-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@vitejs/plugin-react": "latest",
+    "lucide-react": "latest",
+    "papaparse": "^5.7.0",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-router-dom": "latest"
+  },
+  "devDependencies": {
+    "vite": "^8.3.0"
+  }
+}
