@@ -200,7 +200,7 @@ export default function PakistaniRecipe() {
   if (busy) return <main className="dashboard-container"><div className="recipe-loading"><div className="loading-icon"><Loader2 size={30} className="spin" /></div><h2>Loading recipe…</h2><p>Please wait while we prepare your recipe.</p></div></main>;
 
   return (
-    <main className="recipe-container">
+    <main className={`recipe-container${language === "urdu" ? " urdu-content" : ""}`} dir={language === "urdu" ? "rtl" : "ltr"} lang={language === "urdu" ? "ur" : "en"}>
       <div className="recipe-title">
         <div className="recipe-heading-icon"><Soup size={30} /></div>
         <h1>{data?.food_name || data?.recipe_name || food}</h1>
@@ -215,7 +215,7 @@ export default function PakistaniRecipe() {
       {error && <div className="error"><AlertCircle size={18} /> {error}</div>}
 
       <section className="recipe-original-section">
-        <div className="recipe-section-title"><h2><ScrollText size={24} color="#c2410c" /> Original Recipe</h2><p>Original recipe before applying any health recommendation.</p></div>
+        <div className="recipe-section-title"><h2><ScrollText size={24} color="var(--brand)" /> Original Recipe</h2><p>Original recipe before applying any health recommendation.</p></div>
         <div className="recipe-content">
           <section className="recipe-card">
             <div className="recipe-card-header"><div className="recipe-section-icon"><Utensils size={22} /></div><div><h2>Original Ingredients</h2><p>Ingredients for {persons} person(s)</p></div></div>
@@ -230,7 +230,7 @@ export default function PakistaniRecipe() {
       </section>
 
       <section className="health-section">
-        <div className="health-header"><h2><HeartPulse size={24} color="#c2410c" /> Health Recommendation</h2><p>Select a health condition to create a health-adjusted version of this recipe.</p></div>
+        <div className="health-header"><h2><HeartPulse size={24} color="var(--brand)" /> Health Recommendation</h2><p>Select a health condition to create a health-adjusted version of this recipe.</p></div>
         <div className="health-controls">
           <label htmlFor="health-condition">Select Health Condition</label>
           <select id="health-condition" value={health} onChange={(e) => { setHealth(e.target.value); setUpdated(null); setError(""); }}>

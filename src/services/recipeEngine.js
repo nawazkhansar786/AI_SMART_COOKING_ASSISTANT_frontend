@@ -15,7 +15,12 @@ async function loadTextFile(path) {
     throw new Error(`Could not load ${path}`);
   }
 
-  return await response.text();
+  const bytes = await response.arrayBuffer();
+  const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  if (text.includes("\uFFFD")) {
+    console.warn(`Source data contains replacement characters: ${path}`);
+  }
+  return text;
 }
 
 // Simple CSV parser supporting quoted values and commas

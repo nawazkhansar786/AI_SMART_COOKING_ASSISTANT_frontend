@@ -29,6 +29,7 @@ export default function IngredientDetection() {
   const [busy, setBusy] = useState(false);
   const [persons, setPersons] = useState(2);
   const [error, setError] = useState("");
+  const [dragging, setDragging] = useState(false);
 
   // Recipe popup
   const [showPersonPopup, setShowPersonPopup] = useState(false);
@@ -68,6 +69,18 @@ export default function IngredientDetection() {
     if (selectedFile) {
       setSelectedImage(selectedFile);
     }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    const droppedFile = e.dataTransfer.files?.[0];
+    if (!droppedFile) return;
+    if (!droppedFile.type.startsWith("image/")) {
+      setError("Please drop an image file.");
+      return;
+    }
+    setSelectedImage(droppedFile);
   };
 
   // =========================================================
@@ -480,16 +493,32 @@ export default function IngredientDetection() {
 
       {/* IMAGE UPLOAD / CAMERA */}
 
-      <div className="upload-card">
+      <div
+        className={`upload-card${dragging ? " is-dragging" : ""}`}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={(e) => {
+          if (e.currentTarget === e.target) setDragging(false);
+        }}
+        onDrop={handleDrop}
+      >
 
         <h2>
-          <Upload size={22} color="#c2410c" /> Select Ingredient Image
+          <Upload size={22} color="var(--brand)" /> Select Ingredient Image
         </h2>
 
         <p>
           Choose an image from your device or
           capture ingredients directly using your camera.
         </p>
+
+        <div className="drop-hint">
+          <Upload size={18} />
+          <span>Drop an ingredient photo here</span>
+          <small>JPG, PNG or WEBP</small>
+        </div>
 
         {/* IMAGE SOURCE BUTTONS */}
 
@@ -582,7 +611,7 @@ export default function IngredientDetection() {
           <div className="camera-modal-box">
 
             <h2>
-              <Camera size={22} color="#c2410c" /> Live Camera
+              <Camera size={22} color="var(--brand)" /> Live Camera
             </h2>
 
             <p>
@@ -656,7 +685,7 @@ export default function IngredientDetection() {
             <div className="ingredient-section-header">
 
               <h2>
-                <ImageIcon size={22} color="#c2410c" />
+                <ImageIcon size={22} color="var(--brand)" />
                 Detection Result
               </h2>
 
@@ -713,7 +742,7 @@ export default function IngredientDetection() {
             <div className="ingredient-section-header">
 
               <h2>
-                <Carrot size={22} color="#c2410c" />
+                <Carrot size={22} color="var(--brand)" />
                 Detected Ingredients
               </h2>
 
@@ -795,7 +824,7 @@ export default function IngredientDetection() {
             <div className="ingredient-section-header">
 
               <h2>
-                <Soup size={22} color="#c2410c" />
+                <Soup size={22} color="var(--brand)" />
                 Recommended Foods
               </h2>
 
@@ -811,7 +840,7 @@ export default function IngredientDetection() {
             <div className="upload-card">
 
               <h3>
-                <Carrot size={18} color="#c2410c" />
+                <Carrot size={18} color="var(--brand)" />
                 Detected Ingredients
               </h3>
 
@@ -967,7 +996,7 @@ export default function IngredientDetection() {
               <div className="upload-card">
 
                 <h3>
-                  <Info size={18} color="#c2410c" />
+                  <Info size={18} color="var(--brand)" />
                   No Recipes Found
                 </h3>
 

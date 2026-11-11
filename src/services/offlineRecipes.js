@@ -1,6 +1,15 @@
 const DATA_BASE = `${import.meta.env.BASE_URL}data`;
 const cache = new Map();
 
+async function readUtf8(response, path) {
+  const bytes = await response.arrayBuffer();
+  const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  if (text.includes("\uFFFD")) {
+    console.warn(`Source data contains replacement characters: ${path}`);
+  }
+  return text;
+}
+
 function parseCSV(text) {
   const rows = [];
   let row = [];
@@ -31,7 +40,7 @@ async function loadCSV(path) {
   const promise = fetch(`${DATA_BASE}/${path}`)
     .then((response) => {
       if (!response.ok) throw new Error(`Could not load local data: ${path}`);
-      return response.text();
+      return readUtf8(response, path);
     })
     .then(parseCSV);
   cache.set(path, promise);

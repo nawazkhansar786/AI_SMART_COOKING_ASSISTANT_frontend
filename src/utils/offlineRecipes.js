@@ -16,7 +16,11 @@ async function loadCSV(path) {
     throw new Error(`Could not load CSV: ${path}`);
   }
 
-  const text = await response.text();
+  const bytes = await response.arrayBuffer();
+  const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  if (text.includes("\uFFFD")) {
+    console.warn(`Source data contains replacement characters: ${path}`);
+  }
 
   return new Promise((resolve, reject) => {
     Papa.parse(text, {

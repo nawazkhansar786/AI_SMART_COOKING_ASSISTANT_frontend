@@ -218,7 +218,7 @@ export default function Navbar() {
         <div className="modal-backdrop" onClick={closeTimer}>
           <div className="timer-box" onClick={(e) => e.stopPropagation()}>
             <h2>
-              <Timer size={22} color="#c2410c" /> Cooking Timer
+              <Timer size={22} color="var(--brand)" /> Cooking Timer
             </h2>
 
             <label htmlFor="timer-minutes">Duration (minutes)</label>
