@@ -1,9 +1,16 @@
 const DATA_BASE = `${import.meta.env.BASE_URL}data`;
 const cache = new Map();
 
-async function readUtf8(response, path) {
+async function readTextAsset(response, path) {
   const bytes = await response.arrayBuffer();
-  const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  let text;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch (error) {
+    // Older English CSV exports are Windows-1252; Urdu assets remain UTF-8.
+    console.warn(`Using Windows-1252 fallback for legacy CSV: ${path}`, error);
+    text = new TextDecoder("windows-1252").decode(bytes);
+  }
   if (text.includes("\uFFFD")) {
     console.warn(`Source data contains replacement characters: ${path}`);
   }
@@ -40,7 +47,7 @@ async function loadCSV(path) {
   const promise = fetch(`${DATA_BASE}/${path}`)
     .then((response) => {
       if (!response.ok) throw new Error(`Could not load local data: ${path}`);
-      return readUtf8(response, path);
+      return readTextAsset(response, path);
     })
     .then(parseCSV);
   cache.set(path, promise);

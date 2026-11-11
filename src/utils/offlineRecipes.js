@@ -1,6 +1,6 @@
 ﻿import Papa from "papaparse";
 
-const BASE = "/data/Pakistani_Food/";
+const BASE = `${import.meta.env.BASE_URL}data/Pakistani_Food/`;
 
 const FILES = {
   recipes: `${BASE}pakistani_recipes.csv`,
@@ -17,7 +17,13 @@ async function loadCSV(path) {
   }
 
   const bytes = await response.arrayBuffer();
-  const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  let text;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch (error) {
+    console.warn(`Using Windows-1252 fallback for legacy CSV: ${path}`, error);
+    text = new TextDecoder("windows-1252").decode(bytes);
+  }
   if (text.includes("\uFFFD")) {
     console.warn(`Source data contains replacement characters: ${path}`);
   }
@@ -26,7 +32,6 @@ async function loadCSV(path) {
     Papa.parse(text, {
       header: true,
       skipEmptyLines: true,
-      encoding: "UTF-8",
 
       complete: (results) => {
         if (results.errors?.length) {

@@ -1,5 +1,5 @@
 
-const DATA_BASE = "/data/Pakistani_Food";
+const DATA_BASE = `${import.meta.env.BASE_URL}data/Pakistani_Food`;
 
 let ingredientsCache = null;
 let recipesCache = null;
@@ -16,7 +16,13 @@ async function loadTextFile(path) {
   }
 
   const bytes = await response.arrayBuffer();
-  const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  let text;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch (error) {
+    console.warn(`Using Windows-1252 fallback for legacy CSV: ${path}`, error);
+    text = new TextDecoder("windows-1252").decode(bytes);
+  }
   if (text.includes("\uFFFD")) {
     console.warn(`Source data contains replacement characters: ${path}`);
   }
