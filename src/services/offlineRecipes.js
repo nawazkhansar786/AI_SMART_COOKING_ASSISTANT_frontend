@@ -1,3 +1,5 @@
+import { formatIngredientItem } from "../utils/ingredientQuantity";
+
 const DATA_BASE = `${import.meta.env.BASE_URL}data`;
 const cache = new Map();
 
@@ -64,27 +66,6 @@ function normalizeDigits(value) {
     const arabicIndex = arabicDigits.indexOf(digit);
     return arabicIndex !== -1 ? String(arabicIndex) : digit;
   });
-}
-
-function scaleQuantity(quantity, factor) {
-  const original = String(quantity ?? "").trim();
-  if (!original || factor === 1) return original;
-  const normalized = normalizeDigits(original);
-  const match = normalized.match(/\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?/);
-  if (!match) return original;
-  const token = match[0].trim();
-  let amount;
-  if (token.includes(" ")) {
-    const [whole, fraction] = token.split(/\s+/);
-    const [numerator, denominator] = fraction.split("/");
-    amount = Number(whole) + Number(numerator) / Number(denominator);
-  } else if (token.includes("/")) {
-    const [numerator, denominator] = token.split("/");
-    amount = Number(numerator) / Number(denominator);
-  } else amount = Number(token);
-  if (!Number.isFinite(amount)) return original;
-  const scaled = Number((amount * factor).toFixed(2));
-  return normalized.replace(token, String(scaled));
 }
 
 function offlineHealthMessage(health, language) {
@@ -212,10 +193,10 @@ export async function getOfflinePakistaniRecipe(food, language = "english", pers
   const safePersons = Math.min(20, Math.max(1, Number(persons) || 2));
   const factor = safePersons / 2;
 
-  const recipeIngredients = ingredients.filter((item) => item[idKey] === recipeId).map((item) => ({
+  const recipeIngredients = ingredients.filter((item) => item[idKey] === recipeId).map((item) => formatIngredientItem({
     ingredient_name: urdu ? item["جزو_کا_نام"] : item.ingredient_name,
-    quantity: scaleQuantity(urdu ? item["مقدار"] : item.quantity, factor),
-  }));
+    quantity: urdu ? item["مقدار"] : item.quantity,
+  }, factor));
   const recipeSteps = steps.filter((item) => item[idKey] === recipeId)
     .sort((a, b) => Number(a[urdu ? "قدم_نمبر" : "step_number"]) - Number(b[urdu ? "قدم_نمبر" : "step_number"]))
     .map((item) => ({ instruction: urdu ? item["ہدایت"] : item.instruction }));
@@ -263,11 +244,28 @@ export async function getOfflineBaltiRecipe(recipeNo, language = "english") {
     throw new Error(`Balti recipe "${recipeNo}" was not found in the local dataset.`);
   }
 
+  const isKulcha = normalizeBaltiName(recipe["Food Name"]) === "baltikulcha";
+  const ingredients = isKulcha && language !== "urdu"
+    ? [
+      "White flour (all-purpose flour)",
+      "Milk",
+      "Baking soda",
+      "Baking powder",
+      "Salt",
+      "Egg white",
+      "Oil",
+      "Egg yolk (for brushing)",
+    ]
+    : (recipe.Ingredients ?? "");
+  const instruction = isKulcha && language !== "urdu"
+    ? String(recipe.Instruction ?? "").split(/\r?\n/).slice(2).join("\n")
+    : (recipe.Instruction ?? "");
+
   return {
     "S.No": String(recipe["S.No"] ?? "").trim(),
     "Food Name": recipe["Food Name"] ?? "",
-    ingredients: recipe.Ingredients ?? "",
-    instruction: recipe.Instruction ?? "",
+    ingredients,
+    instruction,
   };
 }
 

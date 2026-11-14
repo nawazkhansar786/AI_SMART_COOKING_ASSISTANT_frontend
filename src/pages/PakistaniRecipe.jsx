@@ -1,35 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useParams, useSearchParams } from "react-router-dom";
 import { getOfflineHealthRecommendation, getOfflinePakistaniRecipe } from "../services/offlineRecipes";
+import { formatIngredientItem } from "../utils/ingredientQuantity";
 import {
   AlertCircle, CheckCircle2, ChefHat, Download, FileText, HeartPulse,
   Loader2, RefreshCw, ScrollText, Soup, Users, Utensils, BarChart3, Salad,
 } from "lucide-react";
-
-function scaleGeminiQuantity(quantity, factor) {
-  const text = String(quantity ?? "");
-  if (!text || factor === 1) return text;
-
-  // Scale every numeric amount in a quantity, including fractions and ranges.
-  // Examples: "1 1/2 cups" -> "3 cups" and "1-2 tbsp" -> "2-4 tbsp".
-  return text.replace(/\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?/g, (token) => {
-    let amount;
-    if (token.includes(" ")) {
-      const [whole, fraction] = token.trim().split(/\s+/);
-      const [numerator, denominator] = fraction.split("/");
-      amount = Number(whole) + Number(numerator) / Number(denominator);
-    } else if (token.includes("/")) {
-      const [numerator, denominator] = token.split("/");
-      amount = Number(numerator) / Number(denominator);
-    } else {
-      amount = Number(token);
-    }
-
-    if (!Number.isFinite(amount)) return token;
-    const scaled = Number((amount * factor).toFixed(2));
-    return String(scaled);
-  });
-}
 
 export default function PakistaniRecipe() {
   const { food } = useParams();
@@ -105,10 +81,7 @@ export default function PakistaniRecipe() {
               };
             })
             .filter((item) => item && item.ingredient_name)
-            .map((item) => ({
-              ...item,
-              quantity: scaleGeminiQuantity(item.quantity, persons / 2),
-            }));
+            .map((item) => formatIngredientItem(item, persons / 2));
 
           const normalizedSteps = rawSteps
             .map((item, index) => {

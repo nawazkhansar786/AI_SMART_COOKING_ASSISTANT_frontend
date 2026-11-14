@@ -38,6 +38,7 @@ export default function Recipe() {
 
   const htmlToText = (html) => {
     if (!html) return "";
+    if (Array.isArray(html)) return html.join("\n");
 
     const temp = document.createElement("div");
 
@@ -82,6 +83,12 @@ export default function Recipe() {
       return [];
     }
 
+    if (Array.isArray(data.ingredients)) {
+      return data.ingredients.map((item) => {
+        if (typeof item === "string") return item;
+        return [item.ingredient_name || item.name, item.quantity].filter(Boolean).join(" — ");
+      }).filter(Boolean);
+    }
     const html = data.ingredients;
 
     const temp = document.createElement("div");
