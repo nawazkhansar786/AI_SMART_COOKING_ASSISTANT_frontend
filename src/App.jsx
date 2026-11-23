@@ -21,6 +21,7 @@ import About from "./pages/About";
 import OnnxTest from "./pages/onnxTest";
 import CsvTest from "./pages/CsvTest";
 
+// Wraps the application navigation bar and page content for protected screens.
 function Layout({ children }) {
   return (
     <>
@@ -35,6 +36,7 @@ function Protected({ children }) {
 }
 
 export default function App() {
+  // Declares the complete React Router page map and redirects unknown paths.
   return (
     <Routes>
       {/* Default route: open Dashboard directly */}

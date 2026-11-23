@@ -11,6 +11,7 @@ const ITEMS = [
 ];
 
 export default function Ingredients() {
+  // Manual ingredient-selection page that runs the browser-only CSV recipe engine.
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState([]);
@@ -33,6 +34,9 @@ export default function Ingredients() {
   };
 
   const search = async () => {
+    // Validate selected ingredients and call getRecipeRecommendations().
+    // Input: selected state array. Processing: local CSV normalization and matching.
+    // Output: recipe summaries or an error; they are marked source="csv".
     if (!selected.length) {
       setError("Please select at least one ingredient.");
       return;

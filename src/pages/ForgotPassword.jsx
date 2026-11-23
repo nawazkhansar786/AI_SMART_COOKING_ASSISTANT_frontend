@@ -10,6 +10,7 @@ export default function ForgotPassword() {
   const [error, setError] = useState("");
 
   const submit = async (e) => {
+    // Request a 15-minute reset link by calling POST /api/forgot-password.
     e.preventDefault();
     setMsg("");
     setError("");

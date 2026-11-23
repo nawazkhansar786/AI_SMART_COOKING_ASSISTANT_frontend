@@ -1,4 +1,5 @@
-import { formatIngredientItem } from "../utils/ingredientQuantity";
+import { formatIngredientItem, formatIngredientQuantity } from "../utils/ingredientQuantity";
+import { normalizeCookingStep } from "../utils/cookingTime";
 
 const DATA_BASE = `${import.meta.env.BASE_URL}data`;
 const cache = new Map();
@@ -93,6 +94,11 @@ function cloneRecipeItems(items) {
 }
 
 export function getOfflineHealthRecommendation(recipe, health, language = "english") {
+  // Apply the health rules entirely in the browser for CSV and Gemini recipe objects.
+  // Input: recipe object, health option, and English/Urdu language. Processing:
+  // replaces sugar/oil/salt/ghee/cream rules and appends weight-gain egg details.
+  // Output: cloned, health-adjusted ingredients and steps plus a status message.
+  // Used by PakistaniRecipe.jsx after the user presses Apply Changes.
   const allowed = ["healthy", "diabetes", "blood_pressure", "weight_loss", "weight_gain"];
   if (!allowed.includes(health)) {
     throw new Error("Unsupported health condition.");
@@ -158,14 +164,19 @@ export function getOfflineHealthRecommendation(recipe, health, language = "engli
 
   return {
     ...recipe,
-    ingredients,
+    ingredients: scaledIngredients,
     steps,
     message: offlineHealthMessage(health, language),
-    source: "csv",
+    source: recipe.source || "csv",
   };
 }
 
 export async function getOfflinePakistaniRecipe(food, language = "english", persons = 2) {
+  // Load one Pakistani recipe from browser-hosted English or Urdu CSV assets.
+  // Input: recipe name, language, and person count. Processing: matches the English or
+  // Urdu recipe ID, joins ingredients/steps/nutrition by ID, scales quantities using
+  // factor persons/2, and sorts steps. Output: complete recipe data. Used by
+  // PakistaniRecipes.jsx and PakistaniRecipe.jsx.
   const urdu = language === "urdu";
   const folder = urdu ? "Pakistani_Food_urdu" : "Pakistani_Food";
   const files = urdu
@@ -199,7 +210,11 @@ export async function getOfflinePakistaniRecipe(food, language = "english", pers
   }, factor));
   const recipeSteps = steps.filter((item) => item[idKey] === recipeId)
     .sort((a, b) => Number(a[urdu ? "قدم_نمبر" : "step_number"]) - Number(b[urdu ? "قدم_نمبر" : "step_number"]))
-    .map((item) => ({ instruction: urdu ? item["ہدایت"] : item.instruction }));
+    .map((item, index) => normalizeCookingStep({
+      step_number: item[urdu ? "قدم_نمبر" : "step_number"] || index + 1,
+      instruction: urdu ? item["ہدایت"] : item.instruction,
+      estimated_time_minutes: item["تخمینہ_وقت_منٹ"] || item.cooking_time_minutes,
+    }, index, safePersons));
   const nutritionRow = nutrition.find((item) => item[idKey] === recipeId);
 
   return {
@@ -236,7 +251,7 @@ export async function getOfflineBaltiRecipes() {
   return loadBaltiRecipes("english");
 }
 
-export async function getOfflineBaltiRecipe(recipeNo, language = "english") {
+export async function getOfflineBaltiRecipe(recipeNo, language = "english", persons = 2) {
   const recipes = await loadBaltiRecipes(language);
   const id = String(recipeNo ?? "").trim();
   const recipe = recipes.find((item) => String(item["S.No"] ?? "").trim() === id);
@@ -260,6 +275,11 @@ export async function getOfflineBaltiRecipe(recipeNo, language = "english") {
   const instruction = isKulcha && language !== "urdu"
     ? String(recipe.Instruction ?? "").split(/\r?\n/).slice(2).join("\n")
     : (recipe.Instruction ?? "");
+  const safePersons = Math.min(20, Math.max(1, Number(persons) || 2));
+  const factor = safePersons / 2;
+  const scaledIngredients = Array.isArray(ingredients)
+    ? ingredients.map((item) => formatIngredientQuantity(item, item, factor))
+    : formatIngredientQuantity(ingredients, "", factor);
 
   return {
     "S.No": String(recipe["S.No"] ?? "").trim(),

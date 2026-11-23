@@ -574,6 +574,11 @@ function getRecipeGroup(recipeName) {
 export async function getRecipeRecommendations(
   selected = []
 ) {
+  // Find offline CSV recipes that best match selected ingredients.
+  // Input: ingredient-name array. Processing: loads/caches local CSV data, normalizes
+  // names, checks primary and required combinations, scores direct and keyword matches,
+  // sorts, removes duplicate two-word groups, and keeps top three. Output: matching
+  // recipe summaries. It is used by the Ingredients page and the offline CSV test flow.
   const {
     ingredients,
     recipes,

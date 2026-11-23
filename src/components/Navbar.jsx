@@ -27,6 +27,7 @@ const LINKS = [
 ];
 
 export default function Navbar() {
+  // Shared navigation, account logout, session display, and cooking-timer component.
   const [open, setOpen] = useState(false);
   const [timerOpen, setTimerOpen] = useState(false);
 
@@ -105,6 +106,9 @@ export default function Navbar() {
   }, [timerOpen, seconds]);
 
   const start = () => {
+    // Start a user-selected minute countdown and prepare the browser audio context.
+    // Input: minutes state. Processing: clamps to at least one minute and sets seconds.
+    // Output: timer countdown; the seconds effect shows notifications and an alarm at zero.
     const totalMinutes = Math.max(1, Number(minutes) || 1);
     try {
       const AudioContext = window.AudioContext || window.webkitAudioContext;

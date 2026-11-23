@@ -14,7 +14,8 @@ const PIECE_WEIGHTS = [
 ];
 
 function parseNumber(value) {
-  const token = String(value).trim();
+  // Convert a plain number, simple fraction, or whole-plus-fraction to a number.
+  const token = normalizeNumericDigits(String(value).trim());
   if (token.includes(" ")) {
     const [whole, fraction] = token.split(/\s+/);
     const [numerator, denominator] = fraction.split("/");
@@ -27,14 +28,45 @@ function parseNumber(value) {
   return Number(token);
 }
 
-function formatNumber(value) {
-  return Number(value.toFixed(2)).toString();
+function normalizeNumericDigits(value) {
+  const digits = "0123456789";
+  const arabicIndic = "٠١٢٣٤٥٦٧٨٩";
+  const easternIndic = "۰۱۲۳۴۵۶۷۸۹";
+  return String(value ?? "").replace(/[0-9٠-٩۰-۹]/g, (char) => {
+    let index = arabicIndic.indexOf(char);
+    if (index >= 0) return digits[index];
+    index = easternIndic.indexOf(char);
+    return index >= 0 ? digits[index] : char;
+  });
+}
+
+function formatNumber(value, preserveUrduDigits = false) {
+  const text = Number(value.toFixed(2)).toString();
+  if (!preserveUrduDigits) return text;
+  return text.replace(/\d/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"[Number(digit)]);
 }
 
 function scaleNumbers(text, factor) {
-  return String(text ?? "").replace(/\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?/g, (token) => {
-    const value = parseNumber(token);
-    return Number.isFinite(value) ? formatNumber(value * factor) : token;
+  const original = String(text ?? "");
+  const preserveUrduDigits = /[۰-۹]/.test(original);
+  let normalized = normalizeNumericDigits(original)
+    .replace(/[½⅓⅔¼¾]/g, (symbol) => ({
+      "½": "1/2",
+      "⅓": "1/3",
+      "⅔": "2/3",
+      "¼": "1/4",
+      "¾": "3/4",
+    }[symbol]));
+
+  return normalized.replace(/\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:[.,]\d+)?/g, (token) => {
+    const normalizedToken = token.replace(",", ".");
+    if (factor === 1 && (normalizedToken.includes("/") || normalizedToken.includes(" "))) {
+      return preserveUrduDigits
+        ? normalizedToken.replace(/\d/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"[Number(digit)])
+        : normalizedToken;
+    }
+    const value = parseNumber(normalizedToken);
+    return Number.isFinite(value) ? formatNumber(value * factor, preserveUrduDigits) : token;
   });
 }
 
@@ -54,19 +86,25 @@ function formatVolume(ml) {
 }
 
 export function formatIngredientQuantity(quantity, ingredientName, factor = 1) {
+  // Scale a quantity by persons/2 and improve units for display.
+  // Input: quantity text, ingredient name, and serving factor (default 1).
+  // Processing: scales numeric/fraction text, converts grams/kg and ml/L,
+  // and adds piece or dozen conversions for known ingredients.
+  // Output: display-ready quantity text. It is used when loading Gemini and CSV recipes.
   const original = String(quantity ?? "").trim();
   if (!original) return original;
   const scaled = scaleNumbers(original, factor);
-  const amountMatch = scaled.match(/\d+\.\d+|\d+/);
+  const amountMatch = normalizeNumericDigits(scaled).match(/\d+\.\d+|\d+/);
   if (!amountMatch) return scaled;
   if (/[\u0600-\u06FF]/.test(original) && !/[a-z]/i.test(original)) return scaled;
 
   const amount = Number(amountMatch[0]);
   const lower = scaled.toLowerCase();
+  const normalizedLower = normalizeNumericDigits(lower);
   const name = String(ingredientName ?? "").toLowerCase();
 
-  if (/(egg|انڈ)/i.test(name) && /(egg|piece|pcs|عدد|انڈ)/i.test(lower)) {
-    const range = lower.match(/(\d+(?:\.\d+)?)\s*[-–]\s*(\d+)/);
+  if (/(egg|انڈ)/i.test(name) && /(egg|piece|pcs|عدد|انڈ)/i.test(normalizedLower)) {
+    const range = normalizedLower.match(/(\d+(?:\.\d+)?)\s*[-–]\s*(\d+)/);
     if (range) {
       const start = Math.round(Number(range[1]));
       const end = Math.round(Number(range[2]));

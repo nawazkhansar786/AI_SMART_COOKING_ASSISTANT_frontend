@@ -13,6 +13,7 @@ export default function Login() {
   const nav = useNavigate();
 
   const submit = async (e) => {
+    // Submit credentials to POST /api/login and navigate to the dashboard on success.
     e.preventDefault();
     setError("");
     setLoading(true);

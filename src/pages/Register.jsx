@@ -14,6 +14,7 @@ export default function Register() {
   const nav = useNavigate();
 
   const submit = async (e) => {
+    // Submit account details to POST /api/register and open Login after success.
     e.preventDefault();
     setError("");
     setLoading(true);

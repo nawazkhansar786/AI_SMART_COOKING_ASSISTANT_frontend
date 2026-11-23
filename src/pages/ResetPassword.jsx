@@ -13,6 +13,7 @@ export default function ResetPassword() {
   const nav = useNavigate();
 
   const submit = async (e) => {
+    // Send the new and confirmed passwords with the URL token to Flask for validation.
     e.preventDefault();
     setError("");
     try {

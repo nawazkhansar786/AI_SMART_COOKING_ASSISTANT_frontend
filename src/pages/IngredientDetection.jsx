@@ -17,6 +17,9 @@ import {
 } from "lucide-react";
 
 export default function IngredientDetection() {
+  // Page state and handlers for image capture/upload, YOLO detection, and recipe selection.
+  // It accepts a File, sends multipart data to Flask, shows the result image and names,
+  // and passes the selected complete recipe to the recipe-detail page.
   const navigate = useNavigate();
 
   // =========================================================
@@ -47,6 +50,8 @@ export default function IngredientDetection() {
   // =========================================================
 
   const setSelectedImage = (selectedFile) => {
+    // Store a selected/captured image and create a temporary browser preview URL.
+    // Input: a File or null. Output: updates file, preview, previous result, and errors.
     setFile(selectedFile || null);
     setResult(null);
     setError("");
@@ -108,6 +113,7 @@ export default function IngredientDetection() {
   // =========================================================
 
   const openCamera = async () => {
+    // Request the rear camera, start a live video stream, and report browser permission errors.
     try {
       setCameraError("");
       setError("");
@@ -196,6 +202,9 @@ export default function IngredientDetection() {
   // =========================================================
 
   const capturePhoto = () => {
+    // Draw the live video frame onto a canvas and convert it to a JPEG File.
+    // Input: no arguments; processing uses videoRef. Output: calls setSelectedImage(),
+    // then stopCamera(), so the image can be sent by detect().
     if (!videoRef.current) {
       setCameraError(
         "Camera is not ready yet. Please wait a moment."
@@ -296,6 +305,9 @@ export default function IngredientDetection() {
   // =========================================================
 
   const detect = async () => {
+    // Upload the chosen image to POST /detect and save Flask's JSON result.
+    // Input: the file in component state. Processing: creates FormData, calls apiFetch(),
+    // and waits for model detections/recommendations. Output: updates result or error.
     if (!file) {
       setError(
         "Please select or capture an ingredient image."
