@@ -164,7 +164,7 @@ export function getOfflineHealthRecommendation(recipe, health, language = "engli
 
   return {
     ...recipe,
-    ingredients: scaledIngredients,
+    ingredients,
     steps,
     message: offlineHealthMessage(health, language),
     source: recipe.source || "csv",
